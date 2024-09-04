@@ -109,8 +109,8 @@ def parse_vep(path):
                 # Have a look at vars to see how AAs can be separated from the string and think
                 # which string method you could use.
                 # Append the retrieved reference and mutation amino acids to the respective lists
-                ref_aas= vars[0]
-                mut_aas = vars[2]
+                ref_aas.append(vars[0])
+                mut_aas.append(vars[2])
             
                 #########################
                 ###  END CODING HERE  ###
@@ -137,11 +137,7 @@ def run_baseline(hgvs_ids, ref_aas, mut_aas, blosum_dict):
     # We need to have access to each HGVS ID, reference AA, and mutation AA. These can be found in
     # hgvs_ids, ref_aas, and mut_aas, respectively. Note, these lists have the same length.
     # You can use the following loop:
-    print(len(ref_aas))
-    print(len(mut_aas))
-    print(len(hgvs_ids))
-
-
+    
     for i in range(len(hgvs_ids)):
         # Get reference and mutation AAs from the corresponding lists
         ref_aa = ref_aas[i]
@@ -149,7 +145,7 @@ def run_baseline(hgvs_ids, ref_aas, mut_aas, blosum_dict):
 
         # Compute BLOSUM62 substitution score the reference AA and the mutation AA stored in blosum_dict
         score = blosum_dict[ref_aa][mut_aa]
-        scores.append(score)
+        scores.append(str(score))
         # Append the score to scores
 
 

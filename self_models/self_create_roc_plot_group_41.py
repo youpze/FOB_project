@@ -162,6 +162,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
 
     sorted_score_hgvs_pairs = score_hgvs_pairs
     
+    
     #########################
     ### START CODING HERE ###
     #########################
@@ -169,11 +170,14 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Use the following if-statement and replace the question mark with the type of the predictor.
     # It will put the ROC curve at the correct side of the diagonal line.
 
-    # if type_predictor == ? :
-    #     sorted_score_hgvs_pairs = sorted(score_hgvs_pairs)
-    # else:
-    #     sorted_score_hgvs_pairs = sorted(score_hgvs_pairs, reverse=True)
+    ##sift needs to be reversed here, because the best scores is 0 and this is different for the rest of the datasets
 
+    if type_predictor == 'sift' :
+         sorted_score_hgvs_pairs = sorted(score_hgvs_pairs)
+    else:
+        sorted_score_hgvs_pairs = sorted(score_hgvs_pairs, reverse=True)
+
+    print (sorted_score_hgvs_pairs)
     #########################
     ###  END CODING HERE  ###
     #########################
@@ -181,6 +185,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Later, each coordinate in the ROC plot will be associated with a predictor score (a threshold score). Thus, we
     # need a separate list for predictor scores
     coordinate_score = [sorted_score_hgvs_pairs[0][0]]
+    print(coordinate_score)
 
     # Create lists to store coordinates (tpr, fpr). Starts in (0,0)
     tpr = [0.0]
@@ -210,13 +215,38 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
 
     # Iterate over HGVS IDs of SNPs and corresponding sorted predictor scores
     for i in range(len(sorted_score_hgvs_pairs)):
+
         score = sorted_score_hgvs_pairs[i][0]
         hgvs = sorted_score_hgvs_pairs[i][1]
 
+        
         #########################
         ### START CODING HERE ###
         #########################
-        # Determine whether the SNP is classified by the benchmark as:
+        # Determine whether the SNP is classified by the benchmark as
+
+
+        ## DONT KNOW IF THE SCORE 0 IS CORRECT HERE, BUT IT STATES: "actual positive" and "actual negative
+        ##what the right threshold --> 
+
+        if score > 0.5:
+            tmp_var = 'Pathogenic'
+
+        elif score < 0.5:
+            tmp_var = 'Benign'
+
+        value = benchmark_dict[hgvs]
+
+        if value == tmp_var:
+            tpr.append(score)
+            num_tp += 1
+        else:
+            fpr.append(score)
+            num_fp += 1
+
+    if scores == index_prebreakpoint_score[i]:
+        coordinate_score.append(score)
+
         #    Pathogenic -> actual positive, thus a true positive (y-coordinate)
         #    Benign     -> actual negative, thus a false positive (x-coordinate)
 

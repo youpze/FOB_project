@@ -172,12 +172,12 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
 
     ##sift needs to be reversed here, because the best scores is 0 and this is different for the rest of the datasets
 
-    if type_predictor == 'sift' :
+    if type_predictor == 'polyphen' :
          sorted_score_hgvs_pairs = sorted(score_hgvs_pairs)
     else:
         sorted_score_hgvs_pairs = sorted(score_hgvs_pairs, reverse=True)
 
-    print (sorted_score_hgvs_pairs)
+    
     #########################
     ###  END CODING HERE  ###
     #########################
@@ -185,7 +185,6 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Later, each coordinate in the ROC plot will be associated with a predictor score (a threshold score). Thus, we
     # need a separate list for predictor scores
     coordinate_score = [sorted_score_hgvs_pairs[0][0]]
-    print(coordinate_score)
 
     # Create lists to store coordinates (tpr, fpr). Starts in (0,0)
     tpr = [0.0]
@@ -194,6 +193,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Create variables to keep track of the number of true positives (TPs) and false positives (FPs)
     num_tp = 0
     num_fp = 0
+    tmp_var = ''
 
     # Get the total number of positives (P) and negatives (N)
     total_p, total_n = count_total_results(predictor_score_dict, benchmark_dict)
@@ -224,28 +224,32 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
         ### START CODING HERE ###
         #########################
         # Determine whether the SNP is classified by the benchmark as
-
-
         ## DONT KNOW IF THE SCORE 0 IS CORRECT HERE, BUT IT STATES: "actual positive" and "actual negative
-        ##what the right threshold --> 
+        ##what the right threshold 
 
-        if score > 0.5:
+        if score < 0:
             tmp_var = 'Pathogenic'
-
-        elif score < 0.5:
+        elif score > 0:
             tmp_var = 'Benign'
 
         value = benchmark_dict[hgvs]
 
         if value == tmp_var:
-            tpr.append(score)
             num_tp += 1
+
         else:
-            fpr.append(score)
             num_fp += 1
 
-    if scores == index_prebreakpoint_score[i]:
-        coordinate_score.append(score)
+        calcalute_tpr = num_tp/total_p
+        calculate_fpr = num_fp/total_n
+
+        
+
+        if i in index_prebreakpoint_score:
+            tpr.append(calcalute_tpr)
+            fpr.append(calculate_fpr)
+            coordinate_score.append(score)
+
 
         #    Pathogenic -> actual positive, thus a true positive (y-coordinate)
         #    Benign     -> actual negative, thus a false positive (x-coordinate)
@@ -255,6 +259,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
         # Now, you need to calculate TPR and FPR for unique scores as TP/P and FP/N, respectively,
         # using num_fp, num_tp, total_n, and total_p correctly. Append the values
         # to the corresponding lists: tpr is a list of y-coordinates and fpr is a list of x-coordinates.
+
         # Calculate the rates if HGVS score index i is the index of the score before a breakpoint
         # (use index_prebreakpoint_score). Also, append the score to coordinate_score.
 
@@ -262,6 +267,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
         #########################
         ###  END CODING HERE  ###
         #########################
+
     if out_filepath:
         out_dir, out_filename = os.path.split(out_filepath)
         # Write coordinates to a .tsv file

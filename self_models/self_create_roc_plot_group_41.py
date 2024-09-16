@@ -172,10 +172,19 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Use the following if-statement and replace the question mark with the type of the predictor.
     # It will put the ROC curve at the correct side of the diagonal line.
 
-    if type_predictor == 'sift' :
+    if type_predictor == 'sift' or type_predictor == 'BLOSUM' :
          sorted_score_hgvs_pairs = sorted(score_hgvs_pairs)
     else:
         sorted_score_hgvs_pairs = sorted(score_hgvs_pairs, reverse=True)
+
+    if type_predictor == "sift":
+        print('sift')
+    elif type_predictor == "polyphen":
+        print('polyphen')
+    elif type_predictor == "BLOSUM":
+        print('BLOSUM')
+
+    print(sorted_score_hgvs_pairs[0],  sorted_score_hgvs_pairs[-1])
 
 
     #########################
@@ -218,38 +227,25 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Iterate over HGVS IDs of SNPs and corresponding sorted predictor scores
     for i in range(len(sorted_score_hgvs_pairs)):
         
-
         score = sorted_score_hgvs_pairs[i][0]
         hgvs = sorted_score_hgvs_pairs[i][1]
-
         tmp_var = ''
 
         #########################
         ### START CODING HERE ###
         #########################
         # Determine whether the SNP is classified by the benchmark as
-        ## DONT KNOW IF THE SCORE 0 IS CORRECT HERE, BUT IT STATES: "actual positive" and "actual negative
-        ##what the right threshold 
-
-        if type_predictor == 'polyphen':
-            if score >=  0.85:
-               tmp_var = 'Pathogenic'
-            elif score < 0.85:
-                tmp_var = 'Benign'
-
-        elif type_predictor == 'sift':
-            if score < 0.05:
+        
+        if type_predictor == 'sift' or type_predictor == 'BLOSUM' :
+            if score <  0.5:
                 tmp_var = 'Pathogenic'
-            elif score >= 0.05:
+            elif score >= 0.5:
                 tmp_var = 'Benign'
-
-        elif type_predictor == 'BLOSUM':
-            if score < 0:
+        else:
+            if score >  0.5:
                 tmp_var = 'Pathogenic'
-            elif score >= 0:
-                tmp_var = 'Benign'
-        else: 
-            pass
+            elif score <= 0.5:
+                tmp_var = 'Benign' 
 
         value = benchmark_dict[hgvs]
 
@@ -260,20 +256,14 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
                 num_fp += 1
         else:
             pass
-        
-
+    
         calcalute_tpr = num_tp/total_p
         calculate_fpr = num_fp/total_n
-
     
         if i in index_prebreakpoint_score:
             tpr.append(calcalute_tpr)
             fpr.append(calculate_fpr)
             coordinate_score.append(score)
-
-
-        # to make the plot end in
-        
 
         #    Pathogenic -> actual positive, thus a true positive (y-coordinate)
         #    Benign     -> actual negative, thus a false positive (x-coordinate)
@@ -287,7 +277,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
         # Calculate the rates if HGVS score index i is the index of the score before a breakpoint
         # (use index_prebreakpoint_score). Also, append the score to coordinate_score.
     
-
+    #to end the plot in the top right corner
     tpr.append(1.0)
     fpr.append(1.0)
     
@@ -325,9 +315,7 @@ def integrate(fpr, tpr):
         #########################
         
         x_diff = cur_fpr - last_fpr
-        y_diff = cur_tpr - last_tpr
-    
-        auc += x_diff * (cur_tpr + last_tpr) / 2     
+        y_diff = cur_tpr - last_tpr   
 
         triangle = x_diff * y_diff / 2.0
         rectangle = x_diff * last_tpr
@@ -335,7 +323,7 @@ def integrate(fpr, tpr):
 
 
         
-       
+
         #########################
         ###  END CODING HERE  ###
         #########################

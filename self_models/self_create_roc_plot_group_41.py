@@ -130,6 +130,8 @@ def parse_benchmark(filename):
 
     return benchmark_dict
 
+
+
 def count_total_results(predictor_score_dict, benchmark_dict):
     """
         Calculates the total number of positives (P), or pathogenic results, and negatives (N), or benign results.
@@ -170,14 +172,12 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Use the following if-statement and replace the question mark with the type of the predictor.
     # It will put the ROC curve at the correct side of the diagonal line.
 
-    ##sift needs to be reversed here, because the best scores is 0 and this is different for the rest of the datasets
-
-    if type_predictor == 'polyphen' :
+    if type_predictor == 'sift' :
          sorted_score_hgvs_pairs = sorted(score_hgvs_pairs)
     else:
         sorted_score_hgvs_pairs = sorted(score_hgvs_pairs, reverse=True)
 
-    
+
     #########################
     ###  END CODING HERE  ###
     #########################
@@ -185,6 +185,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Later, each coordinate in the ROC plot will be associated with a predictor score (a threshold score). Thus, we
     # need a separate list for predictor scores
     coordinate_score = [sorted_score_hgvs_pairs[0][0]]
+    
 
     # Create lists to store coordinates (tpr, fpr). Starts in (0,0)
     tpr = [0.0]
@@ -193,7 +194,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Create variables to keep track of the number of true positives (TPs) and false positives (FPs)
     num_tp = 0
     num_fp = 0
-    tmp_var = ''
+    
 
     # Get the total number of positives (P) and negatives (N)
     total_p, total_n = count_total_results(predictor_score_dict, benchmark_dict)
@@ -212,14 +213,17 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
 
     # Add index of the last score (for the last coordinate)
     index_prebreakpoint_score.append(len(sorted_score_hgvs_pairs) - 1)
-
+   
+    
     # Iterate over HGVS IDs of SNPs and corresponding sorted predictor scores
     for i in range(len(sorted_score_hgvs_pairs)):
+        
 
         score = sorted_score_hgvs_pairs[i][0]
         hgvs = sorted_score_hgvs_pairs[i][1]
 
-        
+        tmp_var = ''
+
         #########################
         ### START CODING HERE ###
         #########################
@@ -227,29 +231,49 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
         ## DONT KNOW IF THE SCORE 0 IS CORRECT HERE, BUT IT STATES: "actual positive" and "actual negative
         ##what the right threshold 
 
-        if score < 0:
-            tmp_var = 'Pathogenic'
-        elif score > 0:
-            tmp_var = 'Benign'
+        if type_predictor == 'polyphen':
+            if score >=  0.85:
+               tmp_var = 'Pathogenic'
+            elif score < 0.85:
+                tmp_var = 'Benign'
+
+        elif type_predictor == 'sift':
+            if score < 0.05:
+                tmp_var = 'Pathogenic'
+            elif score >= 0.05:
+                tmp_var = 'Benign'
+
+        elif type_predictor == 'BLOSUM':
+            if score < 0:
+                tmp_var = 'Pathogenic'
+            elif score >= 0:
+                tmp_var = 'Benign'
+        else: 
+            pass
 
         value = benchmark_dict[hgvs]
 
-        if value == tmp_var:
-            num_tp += 1
-
+        if tmp_var ==  'Pathogenic':
+            if value == tmp_var:
+                num_tp += 1
+            else:
+                num_fp += 1
         else:
-            num_fp += 1
+            pass
+        
 
         calcalute_tpr = num_tp/total_p
         calculate_fpr = num_fp/total_n
 
-        
-
+    
         if i in index_prebreakpoint_score:
             tpr.append(calcalute_tpr)
             fpr.append(calculate_fpr)
             coordinate_score.append(score)
 
+
+        # to make the plot end in
+        
 
         #    Pathogenic -> actual positive, thus a true positive (y-coordinate)
         #    Benign     -> actual negative, thus a false positive (x-coordinate)
@@ -262,11 +286,15 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
 
         # Calculate the rates if HGVS score index i is the index of the score before a breakpoint
         # (use index_prebreakpoint_score). Also, append the score to coordinate_score.
+    
 
-
+    tpr.append(1.0)
+    fpr.append(1.0)
+    
         #########################
         ###  END CODING HERE  ###
         #########################
+
 
     if out_filepath:
         out_dir, out_filename = os.path.split(out_filepath)
@@ -285,19 +313,33 @@ def integrate(fpr, tpr):
         :return: a float with AUC
     """
 
-    auc = 0.
+    auc, triangle, rectangle = 0. , 0. , 0.
     last_fpr = fpr[0]
     last_tpr = tpr[0]
+    
+    #auc = numpy.trapezoid(tpr, fpr)
 
     for cur_fpr, cur_tpr in list(zip(fpr, tpr))[1:]:
         #########################
         ### START CODING HERE ###
         #########################
-        # Calculate AUC
+        
+        x_diff = cur_fpr - last_fpr
+        y_diff = cur_tpr - last_tpr
+    
+        auc += x_diff * (cur_tpr + last_tpr) / 2     
 
+        triangle = x_diff * y_diff / 2.0
+        rectangle = x_diff * last_tpr
+        auc += triangle + rectangle
+
+
+        
+       
         #########################
         ###  END CODING HERE  ###
         #########################
+
         last_fpr = cur_fpr
         last_tpr = cur_tpr
 

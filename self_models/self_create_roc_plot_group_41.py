@@ -166,7 +166,7 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     #########################
     ### START CODING HERE ###
     #########################
-    
+
     # You need to sort the scores in the correct order for the ROC plot.
     # Use the following if-statement and replace the question mark with the type of the predictor.
     # It will put the ROC curve at the correct side of the diagonal line.
@@ -227,16 +227,25 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
         #########################
         # Determine whether the SNP is classified by the benchmark as
         
-        if type_predictor == 'sift' or type_predictor == 'BLOSUM' :
-            if score <  0.5:
+        if type_predictor == 'sift':
+            if score <  0.05:
                 tmp_var = 'Pathogenic'
-            elif score >= 0.5:
+            elif score >= 0.05:
+                tmp_var = 'Benign'
+
+        elif type_predictor == 'polyphen':
+            if score >  0.85:
+                tmp_var = 'Pathogenic'
+            elif score <= 0.85:
+                tmp_var = 'Benign' 
+
+        elif type_predictor == 'BLOSUM':
+             if score < 0:
+                tmp_var = 'Pathogenic'
+             else:
                 tmp_var = 'Benign'
         else:
-            if score >  0.5:
-                tmp_var = 'Pathogenic'
-            elif score <= 0.5:
-                tmp_var = 'Benign' 
+            pass
 
         value = benchmark_dict[hgvs]
 

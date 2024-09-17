@@ -161,31 +161,20 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
 
     # Get a list of tuples from predictor_score_dict: (predictor score, HGVS ID)
     score_hgvs_pairs = [(v, k) for k, v in predictor_score_dict.items()]
-
     sorted_score_hgvs_pairs = score_hgvs_pairs
-    
     
     #########################
     ### START CODING HERE ###
     #########################
+    
     # You need to sort the scores in the correct order for the ROC plot.
     # Use the following if-statement and replace the question mark with the type of the predictor.
     # It will put the ROC curve at the correct side of the diagonal line.
 
-    if type_predictor == 'sift' or type_predictor == 'BLOSUM' :
+    if type_predictor in ['BLOSUM', 'sift'] :
          sorted_score_hgvs_pairs = sorted(score_hgvs_pairs)
     else:
         sorted_score_hgvs_pairs = sorted(score_hgvs_pairs, reverse=True)
-
-    if type_predictor == "sift":
-        print('sift')
-    elif type_predictor == "polyphen":
-        print('polyphen')
-    elif type_predictor == "BLOSUM":
-        print('BLOSUM')
-
-    print(sorted_score_hgvs_pairs[0],  sorted_score_hgvs_pairs[-1])
-
 
     #########################
     ###  END CODING HERE  ###
@@ -203,6 +192,8 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     # Create variables to keep track of the number of true positives (TPs) and false positives (FPs)
     num_tp = 0
     num_fp = 0
+    num_tn = 0
+    num_fn = 0
     
 
     # Get the total number of positives (P) and negatives (N)
@@ -254,8 +245,13 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
                 num_tp += 1
             else:
                 num_fp += 1
-        else:
-            pass
+
+        elif tmp_var == 'Benign':
+            if value == tmp_var:
+                num_tn += 1
+            else:
+                num_fn += 1
+    
     
         calcalute_tpr = num_tp/total_p
         calculate_fpr = num_fp/total_n
@@ -280,6 +276,19 @@ def calculate_coordinates(predictor_score_dict, benchmark_dict, out_filepath):
     #to end the plot in the top right corner
     tpr.append(1.0)
     fpr.append(1.0)
+
+    print("\nPredictor type: ",type_predictor)
+    confusion_matrix = "TP: {0} \tFN: {1} \nFP: {2} \tTN: {3}\n".format(num_tp, num_fn, num_fp, num_tn)
+
+    accuracy = (num_tp + num_tn) / (total_p + total_n)
+    recall = num_tp / (num_tp + num_fn)
+    precision = num_tp / (num_tp +num_fp)
+    f1_score = 2 * ( (precision * recall) / (precision + recall))
+
+    scores_predictions = "Accuracy:\t{:.3f}\nRecall:\t\t{:.3f}\nPrecision:\t{:.3f}\nF1 score:\t{:.3f}\n".format(accuracy, recall, precision, f1_score)
+
+    print(confusion_matrix)
+    print(scores_predictions)
     
         #########################
         ###  END CODING HERE  ###
@@ -312,18 +321,13 @@ def integrate(fpr, tpr):
     for cur_fpr, cur_tpr in list(zip(fpr, tpr))[1:]:
         #########################
         ### START CODING HERE ###
-        #########################
-        
+        #########################     
         x_diff = cur_fpr - last_fpr
         y_diff = cur_tpr - last_tpr   
 
         triangle = x_diff * y_diff / 2.0
         rectangle = x_diff * last_tpr
         auc += triangle + rectangle
-
-
-        
-
         #########################
         ###  END CODING HERE  ###
         #########################
